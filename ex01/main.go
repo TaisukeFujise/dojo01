@@ -58,6 +58,10 @@ func main() {
 		fmt.Fprintf(os.Stderr, "error: %s\n", err)
 		os.Exit(1)
 	}
+	if input == output {
+		fmt.Fprintf(os.Stderr, "error: input and output format must be different\n")
+		os.Exit(1)
+	}
 	err := filepath.Walk(root,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
