@@ -17,7 +17,7 @@ func Convert(path string, output Format) error {
 		return err
 	}
 	defer reader.Close()
-	writer, err := os.Create(filenameWithoutFormat(path) + string(output))
+	writer, err := os.Create(pathWithoutFormat(path) + string(output))
 	if err != nil {
 		return err
 	}
@@ -36,8 +36,8 @@ func Convert(path string, output Format) error {
 	return nil
 }
 
-func filenameWithoutFormat(path string) string {
-	return filepath.Base(path[:len(path)-len(filepath.Ext(path))])
+func pathWithoutFormat(path string) string {
+	return path[:len(path)-len(filepath.Ext(path))]
 }
 
 func convertToJPEG(r io.Reader, w io.Writer) error {
