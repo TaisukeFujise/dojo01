@@ -31,38 +31,68 @@ import (
 	"vogsphere-v2.42tokyo.jp/vogsphere_admin/road-to-mercari-gopher-dojo-00-tafujise-01/ex01/imgconv"
 )
 
-var (
+type CLIArgs struct {
 	rawInput  string
 	rawOutput string
-	input     imgconv.Format
-	output    imgconv.Format
-	err       error
 	root      string
-)
+}
 
-func init() {
-	flag.StringVar(&rawInput, "i", "jpg", "input image format")
-	flag.StringVar(&rawOutput, "o", "png", "output image format")
+type ConvertOptions struct {
+	input  imgconv.Format
+	output imgconv.Format
 }
 
 func main() {
+	args, err := parseCLIArgs()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %s\n", err)
+		os.Exit(1)
+	}
+	ops, err := parseOptions(args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %s\n", err)
+		os.Exit(1)
+	}
+	err = convertPath(args.root, ops)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %s\n", err)
+	}
+
+}
+
+func parseCLIArgs() (args CLIArgs, err error) {
+	args.rawInput = *flag.String("i", "jpg", "input image format")
+	args.rawOutput = *flag.String("o", "png", "output image format")
 	flag.Parse()
-	root = parseArgs(flag.Args())
-	input, err = imgconv.ParseFormat(rawInput)
+	args.root, err = parseRootArg(flag.Args())
+	return
+}
+
+func parseRootArg(args []string) (root string, err error) {
+	if len(args) != 1 {
+		return "", fmt.Errorf("invalid argument")
+	}
+	return args[0], nil
+}
+
+func parseOptions(args CLIArgs) (ops ConvertOptions, err error) {
+	ops.input, err = imgconv.ParseFormat(args.rawInput)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %s\n", err)
-		os.Exit(1)
+		return
 	}
-	output, err = imgconv.ParseFormat(rawOutput)
+	ops.output, err = imgconv.ParseFormat(args.rawOutput)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %s\n", err)
-		os.Exit(1)
+		return
 	}
-	if input == output {
-		fmt.Fprintf(os.Stderr, "error: input and output format must be different\n")
-		os.Exit(1)
+	if ops.input == ops.output {
+		err = fmt.Errorf("input and output format must be different")
+		return
 	}
-	err := filepath.Walk(root,
+	return
+}
+
+func convertPath(root string, ops ConvertOptions) error {
+	return filepath.Walk(root,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return fmt.Errorf("%s: %w", path, errors.Unwrap(err))
@@ -70,27 +100,25 @@ func main() {
 			if info.IsDir() {
 				return nil
 			}
-			if input.Validate(path) == false {
+			if ops.input.Validate(path) == false {
 				return fmt.Errorf("%s is not a valid file", path)
 			}
-			if input.Match(path) {
-				err = imgconv.Convert(path, output)
+			if ops.input.Match(path) {
+				r, err := imgconv.OpenInput(path)
 				if err != nil {
 					return err
 				}
-				return nil
+				defer r.Close()
+				w, err := imgconv.CreateOutput(path, ops.output)
+				if err != nil {
+					return err
+				}
+				defer w.Close()
+				err = imgconv.Convert(r, w, ops.output)
+				if err != nil {
+					return err
+				}
 			}
 			return nil
 		})
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %s\n", err)
-	}
-}
-
-func parseArgs(args []string) string {
-	if len(args) != 1 {
-		fmt.Fprintf(os.Stderr, "error: invalid argument\n")
-		os.Exit(1)
-	}
-	return args[0]
 }
