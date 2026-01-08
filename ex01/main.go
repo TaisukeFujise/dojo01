@@ -32,8 +32,8 @@ import (
 )
 
 type CLIArgs struct {
-	rawInput  string
-	rawOutput string
+	rawInput  *string
+	rawOutput *string
 	root      string
 }
 
@@ -61,8 +61,8 @@ func main() {
 }
 
 func parseCLIArgs() (args CLIArgs, err error) {
-	args.rawInput = *flag.String("i", "jpg", "input image format")
-	args.rawOutput = *flag.String("o", "png", "output image format")
+	args.rawInput = flag.String("i", "jpg", "input image format")
+	args.rawOutput = flag.String("o", "png", "output image format")
 	flag.Parse()
 	args.root, err = parseRootArg(flag.Args())
 	return
@@ -76,11 +76,11 @@ func parseRootArg(args []string) (root string, err error) {
 }
 
 func parseOptions(args CLIArgs) (ops ConvertOptions, err error) {
-	ops.input, err = imgconv.ParseFormat(args.rawInput)
+	ops.input, err = imgconv.ParseFormat(*args.rawInput)
 	if err != nil {
 		return
 	}
-	ops.output, err = imgconv.ParseFormat(args.rawOutput)
+	ops.output, err = imgconv.ParseFormat(*args.rawOutput)
 	if err != nil {
 		return
 	}
