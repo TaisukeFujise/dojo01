@@ -9,16 +9,6 @@ import (
 	"testing"
 )
 
-/*TODO
-- test helperの理解
-- test Parallellの理解
-*/
-/*
-- inputPath
-- outputForamt
-- wantErr
-- wantWidth / wantHeight
-*/
 func TestConvert(t *testing.T) {
 	t.Parallel()
 	var tests = []struct {
@@ -87,20 +77,6 @@ func TestConvert(t *testing.T) {
 	}
 }
 
-/*
-ヘルパー関数は「テストの前提条件」を作る関数
-- テストデータをopenする
-- 失敗したらテストを中断する
-→ 「このテストが、この画像が読めることを前提とするという前提条件の宣言」
-
-r := openTestImage(...)（ケースごとに）
-
-w := new buffer
-
-関数呼び出し
-
-w の中身を image.Decode 等で検証
-*/
 func openTestImage(t *testing.T, inputPath string) io.ReadCloser {
 	t.Helper()
 	r, err := os.Open(inputPath)
